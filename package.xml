@@ -17,16 +17,19 @@
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>cirtesub_bringup</exec_depend>
   <exec_depend>cirtesub_description</exec_depend>
+  <exec_depend>cirtesu_tank_aruco_localization</exec_depend>
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>rviz2</exec_depend>
+  <exec_depend>sura_cameras</exec_depend>
   <exec_depend>sura_diagnostics</exec_depend>
   <exec_depend>sura_localization</exec_depend>
   <exec_depend>sura_navigator</exec_depend>
   <exec_depend>sura_teleop</exec_depend>
-  <exec_depend>thrusters_hardware_interface</exec_depend>
+  <exec_depend>sura_hardware_interface</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
   <exec_depend>xacro</exec_depend>
 
   <export>

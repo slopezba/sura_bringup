@@ -73,7 +73,7 @@ def launch_setup(context, *args, **kwargs):
         )
 
     description_pkg = get_package_share_directory("cirtesub_description")
-    hardware_pkg = get_package_share_directory("thrusters_hardware_interface")
+    hardware_pkg = get_package_share_directory("sura_hardware_interface")
     template_pkg = get_package_share_directory("cirtesub_bringup")
 
     xacro_name = (
