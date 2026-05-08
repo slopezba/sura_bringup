@@ -23,7 +23,9 @@ def include_launch(package_name, launch_name, launch_arguments):
 def launch_setup(context, *args, **kwargs):
     robot_namespace = LaunchConfiguration("robot_namespace")
     robot_namespace_value = robot_namespace.perform(context).strip("/")
+    robot_namespace_description = LaunchConfiguration("robot_namespace_description")
     robot_variant = LaunchConfiguration("robot_variant")
+    arms = LaunchConfiguration("arms")
     environment = LaunchConfiguration("environment")
     localization = LaunchConfiguration("localization")
     environment_value = environment.perform(context)
@@ -41,7 +43,9 @@ def launch_setup(context, *args, **kwargs):
 
     common_arguments = {
         "robot_namespace": robot_namespace,
+        "robot_namespace_description": robot_namespace_description,
         "robot_variant": robot_variant,
+        "arms": arms,
         "environment": environment,
         "alpha_use_fake_hardware": alpha_use_fake_hardware,
         "alpha_left_serial_port": alpha_left_serial_port,
@@ -187,7 +191,12 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("robot_namespace", default_value="sura"),
+            DeclareLaunchArgument(
+                "robot_namespace_description",
+                default_value="cirtesub_description",
+            ),
             DeclareLaunchArgument("robot_variant", default_value="dual_alpha"),
+            DeclareLaunchArgument("arms", default_value=""),
             DeclareLaunchArgument("environment", default_value="sim"),
             DeclareLaunchArgument("localization", default_value="real"),
             DeclareLaunchArgument("alpha_use_fake_hardware", default_value="true"),

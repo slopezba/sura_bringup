@@ -34,22 +34,64 @@ DUAL_ALPHA_CONTROLLERS = [
     "task_priority_controller",
 ]
 
+SINGLE_ALPHA_CONTROLLERS = [
+    "joint_state_broadcaster",
+    "alpha_left_forward_velocity_controller",
+]
 
-def build_namespaced_params(template_file, robot_namespace, robot_variant):
+ROBOT_VARIANT_TO_ARMS = {
+    "dual_alpha": "dual",
+    "single_alpha": "single",
+    "auv": "auv",
+}
+
+PARAMS_BY_ARMS = {
+    "dual": "ros2_control_params_dual_alpha.yaml",
+    "single": "ros2_control_params_single_alpha.yaml",
+    "auv": "ros2_control_params.yaml",
+}
+
+
+def description_namespace(description_package_name):
+    return description_package_name.removesuffix("_description")
+
+
+def resolve_arms(arms, robot_variant):
+    if arms:
+        if arms not in PARAMS_BY_ARMS:
+            raise RuntimeError(
+                "Unsupported arms '{}'. Use 'dual', 'single' or 'auv'.".format(arms)
+            )
+        return arms
+
+    if robot_variant not in ROBOT_VARIANT_TO_ARMS:
+        raise RuntimeError(
+            "Unsupported robot_variant '{}'. Use 'dual_alpha', 'single_alpha' or 'auv'.".format(
+                robot_variant
+            )
+        )
+    return ROBOT_VARIANT_TO_ARMS[robot_variant]
+
+
+def build_namespaced_params(
+    template_file,
+    robot_namespace,
+    template_namespace,
+    arms,
+):
     text = Path(template_file).read_text(encoding="utf-8")
-    text = text.replace("/cirtesub/", f"/{robot_namespace}/")
-    text = text.replace("cirtesub/", f"{robot_namespace}/")
-    text = text.replace("cirtesub_thrusters", f"{robot_namespace}_thrusters")
+    text = text.replace(f"/{template_namespace}/", f"/{robot_namespace}/")
+    text = text.replace(f"{template_namespace}/", f"{robot_namespace}/")
     text = text.replace(
-        "/robot_state_publisher_cirtesub",
+        f"{template_namespace}_thrusters",
+        f"{robot_namespace}_thrusters",
+    )
+    text = text.replace(
+        f"/robot_state_publisher_{template_namespace}",
         f"/{robot_namespace}/robot_state_publisher",
     )
 
-    if robot_variant == "auv":
-        text = text.replace(f"        - {robot_namespace}/alpha_left\n", "")
-        text = text.replace(f"        - {robot_namespace}/alpha_right\n", "")
-
-    output_file = f"/tmp/sura_bringup_{robot_namespace}_{robot_variant}_ros2_control.yaml"
+    output_file = f"/tmp/sura_bringup_{robot_namespace}_{arms}_ros2_control.yaml"
     Path(output_file).write_text(text, encoding="utf-8")
     return output_file
 
@@ -69,38 +111,37 @@ def spawner(controller_name, controller_manager, inactive=True):
 
 def launch_setup(context, *args, **kwargs):
     robot_namespace = LaunchConfiguration("robot_namespace").perform(context).strip("/")
+    description_package_name = LaunchConfiguration("robot_namespace_description").perform(
+        context
+    )
     robot_variant = LaunchConfiguration("robot_variant").perform(context)
+    arms = resolve_arms(LaunchConfiguration("arms").perform(context), robot_variant)
     environment = LaunchConfiguration("environment").perform(context)
-
-    if robot_variant not in ("dual_alpha", "auv"):
-        raise RuntimeError(
-            f"Unsupported robot_variant '{robot_variant}'. Use 'dual_alpha' or 'auv'."
-        )
 
     if environment not in ("sim", "real"):
         raise RuntimeError(
             f"Unsupported environment '{environment}'. Use 'sim' or 'real'."
         )
 
-    description_pkg = get_package_share_directory("cirtesub_description")
+    description_pkg = get_package_share_directory(description_package_name)
     hardware_pkg = get_package_share_directory("sura_hardware_interface")
-    template_pkg = get_package_share_directory("cirtesub_bringup")
 
     xacro_name = (
         "cirtesub_dual_alpha.urdf.xacro"
-        if robot_variant == "dual_alpha"
+        if arms in ("dual", "single")
         else "cirtesub.urdf.xacro"
     )
-    params_name = (
-        "ros2_control_params_dual_alpha.yaml"
-        if robot_variant == "dual_alpha"
-        else "ros2_control_params.yaml"
-    )
+    params_name = PARAMS_BY_ARMS[arms]
 
     xacro_file = os.path.join(description_pkg, "urdf", xacro_name)
     csv_file = os.path.join(hardware_pkg, "config", "t500_lookup.csv")
-    template_file = os.path.join(template_pkg, "config", params_name)
-    params_file = build_namespaced_params(template_file, robot_namespace, robot_variant)
+    template_file = os.path.join(description_pkg, "config", params_name)
+    params_file = build_namespaced_params(
+        template_file,
+        robot_namespace,
+        description_namespace(description_package_name),
+        arms,
+    )
 
     xacro_command = [
         "xacro ",
@@ -116,30 +157,32 @@ def launch_setup(context, *args, **kwargs):
         "/controller/thruster_setpoints_sim",
     ]
 
-    if robot_variant == "dual_alpha":
+    if arms in ("dual", "single"):
         alpha_use_sim = "true" if environment == "sim" else "false"
         xacro_command.extend(
             [
+                " arms:=",
+                arms,
                 " use_sim:=",
                 alpha_use_sim,
-            " alpha_use_fake_hardware:=",
-            LaunchConfiguration("alpha_use_fake_hardware"),
-            " alpha_left_serial_port:=",
-            LaunchConfiguration("alpha_left_serial_port"),
-            " alpha_right_serial_port:=",
-            LaunchConfiguration("alpha_right_serial_port"),
-            " alpha_left_state_update_frequency:=",
-            LaunchConfiguration("alpha_left_state_update_frequency"),
-            " alpha_right_state_update_frequency:=",
-            LaunchConfiguration("alpha_right_state_update_frequency"),
-            " initial_positions_file:=",
-            LaunchConfiguration("initial_positions_file"),
-            " alpha_desired_joint_states_topic:=/",
-            robot_namespace,
-            "/alpha/desired_joint_states",
-            " alpha_joint_states_topic:=/",
-            robot_namespace,
-            "/alpha/joint_states",
+                " alpha_use_fake_hardware:=",
+                LaunchConfiguration("alpha_use_fake_hardware"),
+                " alpha_left_serial_port:=",
+                LaunchConfiguration("alpha_left_serial_port"),
+                " alpha_right_serial_port:=",
+                LaunchConfiguration("alpha_right_serial_port"),
+                " alpha_left_state_update_frequency:=",
+                LaunchConfiguration("alpha_left_state_update_frequency"),
+                " alpha_right_state_update_frequency:=",
+                LaunchConfiguration("alpha_right_state_update_frequency"),
+                " initial_positions_file:=",
+                LaunchConfiguration("initial_positions_file"),
+                " alpha_desired_joint_states_topic:=/",
+                robot_namespace,
+                "/alpha/desired_joint_states",
+                " alpha_joint_states_topic:=/",
+                robot_namespace,
+                "/alpha/joint_states",
             ]
         )
 
@@ -163,11 +206,14 @@ def launch_setup(context, *args, **kwargs):
         )
     ]
 
-    if robot_variant == "dual_alpha":
+    if arms in ("dual", "single"):
+        alpha_controllers = (
+            DUAL_ALPHA_CONTROLLERS if arms == "dual" else SINGLE_ALPHA_CONTROLLERS
+        )
         nodes.append(spawner("joint_state_broadcaster", controller_manager, inactive=False))
         nodes.extend(
             spawner(controller, controller_manager)
-            for controller in DUAL_ALPHA_CONTROLLERS
+            for controller in alpha_controllers
             if controller != "joint_state_broadcaster"
         )
 
@@ -185,7 +231,12 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("robot_namespace", default_value="sura"),
+            DeclareLaunchArgument(
+                "robot_namespace_description",
+                default_value="cirtesub_description",
+            ),
             DeclareLaunchArgument("robot_variant", default_value="dual_alpha"),
+            DeclareLaunchArgument("arms", default_value=""),
             DeclareLaunchArgument("environment", default_value="sim"),
             DeclareLaunchArgument("alpha_use_fake_hardware", default_value="true"),
             DeclareLaunchArgument("alpha_left_serial_port", default_value=""),
