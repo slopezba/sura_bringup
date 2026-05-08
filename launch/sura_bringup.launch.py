@@ -22,6 +22,7 @@ def include_launch(package_name, launch_name, launch_arguments):
 
 def launch_setup(context, *args, **kwargs):
     robot_namespace = LaunchConfiguration("robot_namespace")
+    robot_namespace_value = robot_namespace.perform(context).strip("/")
     robot_variant = LaunchConfiguration("robot_variant")
     environment = LaunchConfiguration("environment")
     localization = LaunchConfiguration("localization")
@@ -67,6 +68,26 @@ def launch_setup(context, *args, **kwargs):
             {},
         ),
     ]
+
+    def topic(path):
+        return f"/{robot_namespace_value}/{path}"
+
+    if environment_value == "real":
+        launch_entities.append(
+            include_launch(
+                "sura_imu",
+                "imu.launch.py",
+                {
+                    "raw_imu_topic": topic("sensors/imu"),
+                    "mag_topic": topic("sensors/magnetometer"),
+                    "output_imu_topic": topic("imu/data"),
+                    "calibrated_imu_topic": topic("imu/data_raw_calibrated"),
+                    "calibrated_mag_topic": topic("imu/mag_calibrated"),
+                    "base_frame": f"{robot_namespace_value}/base_link",
+                    "imu_frame": f"{robot_namespace_value}/IMU",
+                },
+            )
+        )
 
     use_sim_localization = environment_value == "sim" and localization_value == "sim"
 

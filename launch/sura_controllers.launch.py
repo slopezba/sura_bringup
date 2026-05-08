@@ -11,10 +11,20 @@ from launch_ros.actions import Node
 BASE_CONTROLLERS = [
     "thruster_test_controller",
     "body_force",
+    "state_observer",
     "body_velocity",
     "stabilize",
     "depth_hold",
     "position_hold",
+]
+
+SENSOR_BROADCASTERS = [
+    "imu_broadcaster",
+    "magnetometer_broadcaster",
+    "pressure_broadcaster",
+    "dvl75_velocity_broadcaster",
+    "dvl75_altitude_broadcaster",
+    "dvl75_gps_broadcaster",
 ]
 
 DUAL_ALPHA_CONTROLLERS = [
@@ -162,6 +172,12 @@ def launch_setup(context, *args, **kwargs):
         )
 
     nodes.extend(spawner(controller, controller_manager) for controller in BASE_CONTROLLERS)
+    nodes.extend(
+        spawner(controller, controller_manager, inactive=False)
+        for controller in SENSOR_BROADCASTERS
+    )
+    if environment == "real":
+        nodes.append(spawner("battery_broadcaster", controller_manager, inactive=False))
     return nodes
 
 
