@@ -25,6 +25,11 @@ SENSOR_BROADCASTERS = [
     "dvl75_velocity_broadcaster",
     "dvl75_altitude_broadcaster",
     "dvl75_gps_broadcaster",
+    "leak_broadcaster",
+]
+
+AUV_ACTIVE_CONTROLLERS = [
+    "lights_controller",
 ]
 
 DUAL_ALPHA_CONTROLLERS = [
@@ -263,10 +268,18 @@ def launch_setup(context, *args, **kwargs):
             if controller != "joint_state_broadcaster"
         )
 
+    base_controllers = list(BASE_CONTROLLERS)
+
     nodes.extend(
         spawner(controller, controller_manager)
-        for controller in BASE_CONTROLLERS
+        for controller in base_controllers
     )
+
+    if arms == "auv":
+        nodes.extend(
+            spawner(controller, controller_manager, inactive=False)
+            for controller in AUV_ACTIVE_CONTROLLERS
+        )
 
     nodes.extend(
         spawner(controller, controller_manager, inactive=False)

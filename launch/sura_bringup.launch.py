@@ -30,6 +30,7 @@ def launch_setup(context, *args, **kwargs):
     arms = LaunchConfiguration("arms")
     environment = LaunchConfiguration("environment")
     localization = LaunchConfiguration("localization")
+    use_imu_calibration = LaunchConfiguration("use_imu_calibration")
 
     environment_value = environment.perform(context)
     localization_value = localization.perform(context)
@@ -44,6 +45,7 @@ def launch_setup(context, *args, **kwargs):
         "alpha_right_state_update_frequency"
     )
     initial_positions_file = LaunchConfiguration("initial_positions_file")
+    pressure_offset_pa = LaunchConfiguration("pressure_offset_pa")
 
     common_arguments = {
         "robot_namespace": robot_namespace,
@@ -81,6 +83,7 @@ def launch_setup(context, *args, **kwargs):
                         "imu.launch.py",
                         {
                             "robot_namespace": robot_namespace,
+                            "use_calibration": use_imu_calibration,
                         },
                     )
                 ],
@@ -144,6 +147,7 @@ def launch_setup(context, *args, **kwargs):
                         {
                             "robot_namespace": robot_namespace,
                             "environment": environment,
+                            "pressure_offset_pa": pressure_offset_pa,
                         },
                     )
                 ],
@@ -206,12 +210,14 @@ def generate_launch_description():
             DeclareLaunchArgument("arms", default_value=""),
             DeclareLaunchArgument("environment", default_value="sim"),
             DeclareLaunchArgument("localization", default_value="real"),
+            DeclareLaunchArgument("use_imu_calibration", default_value="true"),
             DeclareLaunchArgument("alpha_use_fake_hardware", default_value="true"),
             DeclareLaunchArgument("alpha_left_serial_port", default_value=""),
             DeclareLaunchArgument("alpha_right_serial_port", default_value=""),
             DeclareLaunchArgument("alpha_left_state_update_frequency", default_value="250"),
             DeclareLaunchArgument("alpha_right_state_update_frequency", default_value="250"),
             DeclareLaunchArgument("initial_positions_file", default_value="initial_positions.yaml"),
+            DeclareLaunchArgument("pressure_offset_pa", default_value="101325.0"),
             OpaqueFunction(function=launch_setup),
         ]
     )
