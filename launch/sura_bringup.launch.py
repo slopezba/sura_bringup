@@ -13,7 +13,7 @@ from launch_ros.actions import Node
 
 
 DESCRIPTION_PACKAGES_BY_NAMESPACE = {
-    "blueboat": "blueboat_cirtesu_description",
+    "blueboat": "blueboat_description",
     "cirtesub": "cirtesub_description",
     "bluerov": "bluerov_description",
     "sura": "cirtesub_description",
