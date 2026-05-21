@@ -1,4 +1,8 @@
 import os
+import shlex
+import subprocess
+import xml.etree.ElementTree as ET
+import yaml
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -6,6 +10,35 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, Opaq
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+
+
+DESCRIPTION_PACKAGES_BY_NAMESPACE = {
+    "blueboat": "blueboat_cirtesu_description",
+    "cirtesub": "cirtesub_description",
+    "bluerov": "bluerov_description",
+    "sura": "cirtesub_description",
+}
+
+
+def resolve_description_package(robot_namespace):
+    return DESCRIPTION_PACKAGES_BY_NAMESPACE.get(
+        robot_namespace,
+        f"{robot_namespace}_description",
+    )
+
+
+def load_robot_profile(description_package_name):
+    description_share = get_package_share_directory(description_package_name)
+    profile_file = os.path.join(description_share, "config", "bringup_description.yaml")
+
+    if not os.path.exists(profile_file):
+        raise RuntimeError(
+            f"Robot profile not found: {profile_file}. "
+            "Expected config/bringup_description.yaml inside the description package."
+        )
+
+    with open(profile_file, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
 
 def include_launch(package_name, launch_name, launch_arguments):
@@ -20,16 +53,67 @@ def include_launch(package_name, launch_name, launch_arguments):
     )
 
 
+def build_xacro_arguments(xacro_args):
+    return " ".join(
+        f"{key}:={str(value).lower() if isinstance(value, bool) else value}"
+        for key, value in xacro_args.items()
+    )
+
+
+def render_robot_description(description_package_name, xacro_relative_path, xacro_args):
+    xacro_file = os.path.join(
+        get_package_share_directory(description_package_name),
+        xacro_relative_path,
+    )
+    command = ["xacro", xacro_file]
+    command.extend(
+        f"{key}:={str(value).lower() if isinstance(value, bool) else value}"
+        for key, value in xacro_args.items()
+    )
+    return subprocess.check_output(command, text=True)
+
+
+def xacro_contains_camera_actuator(robot_description_xml):
+    root = ET.fromstring(robot_description_xml)
+    for ros2_control in root.findall("ros2_control"):
+        for element in ros2_control.iter():
+            name = element.attrib.get("name", "")
+            if "camera" in name.lower():
+                return True
+    return False
+
+
 def launch_setup(context, *args, **kwargs):
     robot_namespace = LaunchConfiguration("robot_namespace")
     robot_namespace_value = robot_namespace.perform(context).strip("/")
-    robot_namespace_description = LaunchConfiguration("robot_namespace_description")
+
+    robot_namespace_description_value = resolve_description_package(robot_namespace_value)
+    robot_profile = load_robot_profile(robot_namespace_description_value)
+    description_profile = robot_profile.get("description", {})
+    xacro_args = dict(description_profile.get("xacro_args", {}))
+    xacro_args["robot_namespace"] = robot_namespace_value
+    xacro_args["environment"] = LaunchConfiguration("environment").perform(context)
+    xacro_arguments = build_xacro_arguments(xacro_args)
+    xacro_relative_path = description_profile.get("xacro", "")
+
+    if not xacro_relative_path:
+        raise RuntimeError("description.xacro must be defined in bringup_description.yaml")
+
+    robot_description_xml = render_robot_description(
+        robot_namespace_description_value,
+        xacro_relative_path,
+        xacro_args,
+    )
+    launch_cameras = xacro_contains_camera_actuator(robot_description_xml)
+
     robot_variant = LaunchConfiguration("robot_variant")
     arms = LaunchConfiguration("arms")
     environment = LaunchConfiguration("environment")
     localization = LaunchConfiguration("localization")
+
     environment_value = environment.perform(context)
     localization_value = localization.perform(context)
+
     alpha_use_fake_hardware = LaunchConfiguration("alpha_use_fake_hardware")
     alpha_left_serial_port = LaunchConfiguration("alpha_left_serial_port")
     alpha_right_serial_port = LaunchConfiguration("alpha_right_serial_port")
@@ -43,7 +127,7 @@ def launch_setup(context, *args, **kwargs):
 
     common_arguments = {
         "robot_namespace": robot_namespace,
-        "robot_namespace_description": robot_namespace_description,
+        "robot_namespace_description": robot_namespace_description_value,
         "robot_variant": robot_variant,
         "arms": arms,
         "environment": environment,
@@ -55,23 +139,38 @@ def launch_setup(context, *args, **kwargs):
         "initial_positions_file": initial_positions_file,
     }
 
+    description_launch_arguments = {
+        **common_arguments,
+        "xacro_file": xacro_relative_path,
+        "xacro_arguments": xacro_arguments,
+    }
+
     launch_entities = [
         include_launch(
-            "cirtesub_description",
-            "robot_description.launch.py",
-            common_arguments,
-        ),
-        include_launch(
-            "sura_bringup",
-            "sura_controllers.launch.py",
-            common_arguments,
-        ),
-        include_launch(
-            "sura_cameras",
-            "cameras.launch.py",
-            {},
+            robot_namespace_description_value,
+            description_profile.get("launch_file", "robot_description.launch.py"),
+            description_launch_arguments,
         ),
     ]
+
+    ros2_control_profile = robot_profile.get("ros2_control", {})
+    if ros2_control_profile.get("enabled", True):
+        launch_entities.append(
+            include_launch(
+                ros2_control_profile.get("launch_package", "sura_bringup"),
+                ros2_control_profile.get("launch_file", "sura_controllers.launch.py"),
+                common_arguments,
+            )
+        )
+
+    if launch_cameras:
+        launch_entities.append(
+            include_launch(
+                "sura_cameras",
+                "cameras.launch.py",
+                {},
+            )
+        )
 
     def topic(path):
         return f"/{robot_namespace_value}/{path}"
@@ -104,22 +203,14 @@ def launch_setup(context, *args, **kwargs):
                     name="world_ned_to_world_enu",
                     output="screen",
                     arguments=[
-                        "--x",
-                        "0.0",
-                        "--y",
-                        "0.0",
-                        "--z",
-                        "0.0",
-                        "--roll",
-                        "3.14159265359",
-                        "--pitch",
-                        "0.0",
-                        "--yaw",
-                        "1.57079632679",
-                        "--frame-id",
-                        "world_ned",
-                        "--child-frame-id",
-                        "world_enu",
+                        "--x", "0.0",
+                        "--y", "0.0",
+                        "--z", "0.0",
+                        "--roll", "3.14159265359",
+                        "--pitch", "0.0",
+                        "--yaw", "1.57079632679",
+                        "--frame-id", "world_ned",
+                        "--child-frame-id", "world_enu",
                     ],
                 ),
                 Node(
@@ -128,22 +219,14 @@ def launch_setup(context, *args, **kwargs):
                     name="world_ned_to_cirtesu_tank",
                     output="screen",
                     arguments=[
-                        "--x",
-                        "0.0",
-                        "--y",
-                        "0.0",
-                        "--z",
-                        "0.0",
-                        "--roll",
-                        "0.0",
-                        "--pitch",
-                        "0.0",
-                        "--yaw",
-                        "3.1416",
-                        "--frame-id",
-                        "world_ned",
-                        "--child-frame-id",
-                        "cirtesu_tank",
+                        "--x", "0.0",
+                        "--y", "0.0",
+                        "--z", "0.0",
+                        "--roll", "0.0",
+                        "--pitch", "0.0",
+                        "--yaw", "3.1416",
+                        "--frame-id", "world_ned",
+                        "--child-frame-id", "cirtesu_tank",
                     ],
                 ),
                 include_launch(
@@ -154,13 +237,37 @@ def launch_setup(context, *args, **kwargs):
             ]
         )
     else:
-        launch_entities.append(
-            include_launch(
+        localization_profile = robot_profile.get("localization", {})
+        localization_enabled = localization_profile.get("enabled", True)
+
+        if localization_enabled:
+            localization_launch_package = localization_profile.get(
+                "launch_package",
                 "sura_localization",
-                "auv_localization.launch.py",
-                {"robot_namespace": robot_namespace},
             )
-        )
+            localization_launch_file = localization_profile.get(
+                "launch_file",
+                "auv_localization.launch.py",
+            )
+
+            launch_entities.append(
+                include_launch(
+                    localization_launch_package,
+                    localization_launch_file,
+                    {
+                        key: value
+                        for key, value in {
+                            "robot_namespace": robot_namespace,
+                            "publish_tf": (
+                                str(localization_profile["publish_tf"]).lower()
+                                if "publish_tf" in localization_profile
+                                else None
+                            ),
+                        }.items()
+                        if value is not None
+                    },
+                )
+            )
 
     launch_entities.extend(
         [
@@ -184,6 +291,26 @@ def launch_setup(context, *args, **kwargs):
         ]
     )
 
+    teleop_profile = robot_profile.get("teleop", {})
+    if teleop_profile.get("enabled", False):
+        teleop_arguments = {
+            "robot_namespace": robot_namespace,
+        }
+        if "robot" in teleop_profile:
+            teleop_arguments["robot_model"] = str(teleop_profile["robot"])
+        elif "profile" in teleop_profile:
+            teleop_arguments["robot_model"] = str(teleop_profile["profile"])
+        if "config" in teleop_profile:
+            teleop_arguments["config_file"] = str(teleop_profile["config"])
+
+        launch_entities.append(
+            include_launch(
+                teleop_profile.get("launch_package", "sura_teleop"),
+                teleop_profile.get("launch_file", "teleop.launch.py"),
+                teleop_arguments,
+            )
+        )
+
     return launch_entities
 
 
@@ -191,10 +318,6 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("robot_namespace", default_value="sura"),
-            DeclareLaunchArgument(
-                "robot_namespace_description",
-                default_value="cirtesub_description",
-            ),
             DeclareLaunchArgument("robot_variant", default_value="dual_alpha"),
             DeclareLaunchArgument("arms", default_value=""),
             DeclareLaunchArgument("environment", default_value="sim"),
