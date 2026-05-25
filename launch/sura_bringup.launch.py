@@ -1,5 +1,4 @@
 import os
-import shlex
 import subprocess
 import xml.etree.ElementTree as ET
 import yaml
@@ -12,19 +11,8 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
-DESCRIPTION_PACKAGES_BY_NAMESPACE = {
-    "blueboat": "blueboat_description",
-    "cirtesub": "cirtesub_description",
-    "bluerov": "bluerov_description",
-    "sura": "cirtesub_description",
-}
-
-
 def resolve_description_package(robot_namespace):
-    return DESCRIPTION_PACKAGES_BY_NAMESPACE.get(
-        robot_namespace,
-        f"{robot_namespace}_description",
-    )
+    return f"{robot_namespace}_description"
 
 
 def load_robot_profile(description_package_name):
@@ -106,37 +94,16 @@ def launch_setup(context, *args, **kwargs):
     )
     launch_cameras = xacro_contains_camera_actuator(robot_description_xml)
 
-    robot_variant = LaunchConfiguration("robot_variant")
-    arms = LaunchConfiguration("arms")
     environment = LaunchConfiguration("environment")
     localization = LaunchConfiguration("localization")
 
     environment_value = environment.perform(context)
     localization_value = localization.perform(context)
 
-    alpha_use_fake_hardware = LaunchConfiguration("alpha_use_fake_hardware")
-    alpha_left_serial_port = LaunchConfiguration("alpha_left_serial_port")
-    alpha_right_serial_port = LaunchConfiguration("alpha_right_serial_port")
-    alpha_left_state_update_frequency = LaunchConfiguration(
-        "alpha_left_state_update_frequency"
-    )
-    alpha_right_state_update_frequency = LaunchConfiguration(
-        "alpha_right_state_update_frequency"
-    )
-    initial_positions_file = LaunchConfiguration("initial_positions_file")
-
     common_arguments = {
         "robot_namespace": robot_namespace,
         "robot_namespace_description": robot_namespace_description_value,
-        "robot_variant": robot_variant,
-        "arms": arms,
         "environment": environment,
-        "alpha_use_fake_hardware": alpha_use_fake_hardware,
-        "alpha_left_serial_port": alpha_left_serial_port,
-        "alpha_right_serial_port": alpha_right_serial_port,
-        "alpha_left_state_update_frequency": alpha_left_state_update_frequency,
-        "alpha_right_state_update_frequency": alpha_right_state_update_frequency,
-        "initial_positions_file": initial_positions_file,
     }
 
     description_launch_arguments = {
@@ -181,9 +148,9 @@ def launch_setup(context, *args, **kwargs):
                 "sura_imu",
                 "imu.launch.py",
                 {
-                    "raw_imu_topic": topic("sensors/imu"),
-                    "mag_topic": topic("sensors/magnetometer"),
-                    "output_imu_topic": topic("imu/data"),
+                    "raw_imu_topic": topic("controller/imu_broadcaster/imu"),
+                    "mag_topic": topic("magnetometer_broadcaster/mag"),
+                    "output_imu_topic": topic("sensors/imu"),
                     "calibrated_imu_topic": topic("imu/data_raw_calibrated"),
                     "calibrated_mag_topic": topic("imu/mag_calibrated"),
                     "base_frame": f"{robot_namespace_value}/base_link",
@@ -285,7 +252,7 @@ def launch_setup(context, *args, **kwargs):
                 "diagnostics.launch.py",
                 {
                     "robot_namespace": robot_namespace,
-                    "robot_variant": robot_variant,
+                    "robot_variant": str(robot_profile.get("robot", {}).get("family", "")),
                 },
             ),
         ]
@@ -318,16 +285,8 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("robot_namespace", default_value="sura"),
-            DeclareLaunchArgument("robot_variant", default_value="dual_alpha"),
-            DeclareLaunchArgument("arms", default_value=""),
             DeclareLaunchArgument("environment", default_value="sim"),
             DeclareLaunchArgument("localization", default_value="real"),
-            DeclareLaunchArgument("alpha_use_fake_hardware", default_value="true"),
-            DeclareLaunchArgument("alpha_left_serial_port", default_value=""),
-            DeclareLaunchArgument("alpha_right_serial_port", default_value=""),
-            DeclareLaunchArgument("alpha_left_state_update_frequency", default_value="250"),
-            DeclareLaunchArgument("alpha_right_state_update_frequency", default_value="250"),
-            DeclareLaunchArgument("initial_positions_file", default_value="initial_positions.yaml"),
             OpaqueFunction(function=launch_setup),
         ]
     )
