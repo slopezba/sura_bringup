@@ -41,6 +41,68 @@ def include_launch(package_name, launch_name, launch_arguments):
     )
 
 
+def launch_ping_sonar(robot_namespace_value, environment_value, ping_profile):
+    if not ping_profile.get("enabled", False):
+        return []
+
+    if ping_profile.get("real_only", True) and environment_value != "real":
+        return []
+
+    output_topic = str(
+        ping_profile.get("output_topic", f"/{robot_namespace_value}/sensors/altimeter")
+    )
+    parameters = {
+        key: ping_profile[key]
+        for key in (
+            "port",
+            "speed",
+            "interval_num",
+            "gain_num",
+            "scan_start",
+            "scan_lenght",
+            "mode_auto",
+        )
+        if key in ping_profile
+    }
+
+    return [
+        Node(
+            package=str(ping_profile.get("package", "ping_sonar_ros")),
+            executable=str(ping_profile.get("executable", "ping1d_node")),
+            name=str(ping_profile.get("name", "ping1d_node")),
+            output="screen",
+            parameters=[parameters],
+            remappings=[
+                ("/ping1d/range", output_topic),
+                ("/ping1d/data", f"/{robot_namespace_value}/sensors/altimeter_data"),
+                ("/ping1d/param/speed", f"/{robot_namespace_value}/sensors/altimeter/param/speed"),
+                (
+                    "/ping1d/param/interval",
+                    f"/{robot_namespace_value}/sensors/altimeter/param/interval",
+                ),
+                ("/ping1d/param/gain", f"/{robot_namespace_value}/sensors/altimeter/param/gain"),
+                ("/ping1d/param/mode", f"/{robot_namespace_value}/sensors/altimeter/param/mode"),
+            ],
+        ),
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            name="altimeter_to_ping_range",
+            output="screen",
+            arguments=[
+                "--x", "0.0",
+                "--y", "0.0",
+                "--z", "0.0",
+                "--roll", "0.0",
+                "--pitch", "0.0",
+                "--yaw", "0.0",
+                "--frame-id", f"{robot_namespace_value}/altimeter_link",
+                "--child-frame-id", "range_link",
+            ],
+        ),
+    ]
+
+
 def build_xacro_arguments(xacro_args):
     return " ".join(
         f"{key}:={str(value).lower() if isinstance(value, bool) else value}"
