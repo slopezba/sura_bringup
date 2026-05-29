@@ -15,7 +15,7 @@ def generate_launch_description():
     robot_namespace = LaunchConfiguration("robot_namespace")
     teleop_enabled = LaunchConfiguration("teleop_enabled")
 
-    rviz_config_file = os.path.join(bringup_share, "config", "sura_tandem.rviz")
+    rviz_config_file = os.path.join(bringup_share, "config", "cirtesub.rviz")
     teleop_launch_file = os.path.join(teleop_share, "launch", "teleop.launch.py")
 
     teleop_launch = IncludeLaunchDescription(
@@ -33,7 +33,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        DeclareLaunchArgument("robot_namespace", default_value="sura"),
+        DeclareLaunchArgument("robot_namespace"),
         DeclareLaunchArgument("teleop_enabled", default_value="true"),
         teleop_launch,
         rviz_node,
