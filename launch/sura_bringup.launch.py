@@ -103,13 +103,15 @@ def prepare_runtime_values(context, *args, **kwargs):
         raise RuntimeError("localization.publish_tf must be defined in bringup_description.yaml")
     localization_publish_tf = localization_profile["publish_tf"]
 
-    localization_frame_convention = str(
-        localization_profile.get("frame_convention", "")
-    ).strip()
-    if localization_frame_convention not in ("ned", "enu"):
-        raise RuntimeError(
-            "localization.frame_convention must be 'ned' or 'enu' in bringup_description.yaml"
-        )
+    datum_profile = localization_profile.get("datum", {})
+    if datum_profile is None:
+        datum_profile = {}
+    if not isinstance(datum_profile, dict):
+        raise RuntimeError("localization.datum must be a map in bringup_description.yaml")
+
+    datum_latitude = datum_profile.get("latitude", 0.0)
+    datum_longitude = datum_profile.get("longitude", 0.0)
+    datum_heading = datum_profile.get("heading", 0.0)
 
     raw_imu_topic = str(imu_profile.get("raw_imu_topic", "")).strip()
     if not raw_imu_topic:
@@ -155,7 +157,9 @@ def prepare_runtime_values(context, *args, **kwargs):
         "localization_launch_package": localization_launch_package,
         "localization_launch_file": localization_launch_file,
         "localization_publish_tf": localization_publish_tf,
-        "localization_frame_convention": localization_frame_convention,
+        "localization_datum_latitude": datum_latitude,
+        "localization_datum_longitude": datum_longitude,
+        "localization_datum_heading": datum_heading,
     }
 
     return [
@@ -312,10 +316,9 @@ def generate_launch_description():
                 launch_arguments=[
                     ("robot_namespace", robot_namespace),
                     ("publish_tf", LaunchConfiguration("localization_publish_tf")),
-                    (
-                        "frame_convention",
-                        LaunchConfiguration("localization_frame_convention"),
-                    ),
+                    ("datum_latitude", LaunchConfiguration("localization_datum_latitude")),
+                    ("datum_longitude", LaunchConfiguration("localization_datum_longitude")),
+                    ("datum_heading", LaunchConfiguration("localization_datum_heading")),
                 ],
             ),
         ],
@@ -335,10 +338,6 @@ def generate_launch_description():
                     ("robot_namespace", robot_namespace),
                     ("environment", LaunchConfiguration("environment")),
                     ("localization", LaunchConfiguration("localization")),
-                    (
-                        "localization_frame_convention",
-                        LaunchConfiguration("localization_frame_convention"),
-                    ),
                 ],
             ),
         ]

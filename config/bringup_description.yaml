@@ -1,33 +1,42 @@
 robot:
-  name: blueboat
+  name: bluerov
   environment: real
   localization: real
 
 description:
-  package: blueboat_description
-  xacro: urdf/blueboat.urdf.xacro
+  package: bluerov_description
+  xacro: urdf/bluerov.urdf.xacro
 
 ros2_control:
-  params_package: blueboat_description
+  params_package: bluerov_description
   params: config/ros2_control_params.yaml
 
 diagnostics:
   params_package: sura_diagnostics
-  params: config/blueboat_diagnostics.yaml
+  params: config/bluerov_diagnostics.yaml
 
 cameras:
   down_camera:
+    enabled: true
+    aruco: true
+  front_camera:
     enabled: false
+    aruco: false
+  right_camera:
+    enabled: true
     aruco: false
 
 imu:
   raw_imu_topic: controller/imu_broadcaster/imu
   filtered_imu_topic: sensors/imu
-  mag_topic: magnetometer_broadcaster/mag
+  mag_topic: controller/magnetometer_broadcaster/mag
 
 localization:
   enabled: true
   launch_package: sura_localization
-  launch_file: surface_fastlio.launch.py
+  launch_file: auv_localization.launch.py
   publish_tf: true
-  frame_convention: ned
+  datum:
+    latitude: 39.994335199497364
+    longitude: -0.07400607762331379
+    heading: 0.0
