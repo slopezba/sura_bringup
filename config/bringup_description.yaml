@@ -1,6 +1,6 @@
 robot:
   name: bluerov
-  environment: real
+  environment: sim
   localization: real
 
 description:
@@ -34,9 +34,12 @@ imu:
 localization:
   enabled: true
   launch_package: sura_localization
-  launch_file: auv_localization.launch.py
+  launch_file: cirtesu_auv_localization.launch.py
   publish_tf: true
   datum:
-    latitude: 39.994335199497364
-    longitude: -0.07400607762331379
+    # latitude: 39.994335199497364
+    # longitude: -0.07400607762331379
+    # heading: 0.0
+    latitude: 39.9944
+    longitude: -0.0741
     heading: 0.0

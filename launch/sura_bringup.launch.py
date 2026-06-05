@@ -252,13 +252,13 @@ def generate_launch_description():
                     PathJoinSubstitution([FindPackageShare("sura_imu"), "launch", "imu.launch.py"])
                 ),
                 launch_arguments=[
+                    ("environment", LaunchConfiguration("environment")),
                     ("raw_imu_topic", raw_imu_topic),
                     ("mag_topic", mag_topic),
                     ("filtered_imu_topic", filtered_imu_topic),
                 ],
             ),
         ],
-        condition=IfCondition(LaunchConfiguration("environment_is_real")),
     )
 
     sim_tf_launch = GroupAction(
@@ -338,6 +338,7 @@ def generate_launch_description():
                     ("robot_namespace", robot_namespace),
                     ("environment", LaunchConfiguration("environment")),
                     ("localization", LaunchConfiguration("localization")),
+                    ("publish_tf", LaunchConfiguration("localization_publish_tf")),
                 ],
             ),
         ]
