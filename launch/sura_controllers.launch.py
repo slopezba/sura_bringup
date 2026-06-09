@@ -16,6 +16,18 @@ CONTROLLER_GROUPS_BY_FAMILY = {
     "underwater": ("common_controllers", "auv_controllers"),
 }
 
+DUAL_ALPHA_CONTROLLERS = [
+    "joint_state_broadcaster",
+    "alpha_left_forward_velocity_controller",
+    "alpha_right_forward_velocity_controller",
+    "task_priority_controller",
+]
+
+SINGLE_ALPHA_CONTROLLERS = [
+    "joint_state_broadcaster",
+    "alpha_left_forward_velocity_controller",
+]
+
 
 def find_controller_manager_parameters(data):
     for node_name, node_params in data.items():
@@ -46,7 +58,15 @@ def discover_joint_controllers(robot_description_root):
     return controllers
 
 
-def load_controllers_to_spawn(params_file, robot_family, robot_description_root):
+def alpha_controllers_for_arms(arms):
+    if arms == "dual":
+        return DUAL_ALPHA_CONTROLLERS
+    if arms == "single":
+        return SINGLE_ALPHA_CONTROLLERS
+    return []
+
+
+def load_controllers_to_spawn(params_file, robot_family, arms, robot_description_root):
     with open(params_file, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
 
@@ -65,6 +85,7 @@ def load_controllers_to_spawn(params_file, robot_family, robot_description_root)
 
     controllers.extend(discover_joint_controllers(robot_description_root))
     controllers.extend(discover_sensor_broadcasters(robot_description_root))
+    controllers.extend(alpha_controllers_for_arms(arms))
 
     configured_controllers = {
         name
@@ -103,6 +124,7 @@ def is_broadcaster(controller_name):
 def launch_setup(context, *args, **kwargs):
     robot_namespace = LaunchConfiguration("robot_namespace").perform(context).strip("/")
     robot_family = LaunchConfiguration("robot_family").perform(context).strip()
+    arms = LaunchConfiguration("arms").perform(context).strip()
     description_package = LaunchConfiguration("description_package").perform(context).strip()
     xacro_file = LaunchConfiguration("xacro_file").perform(context).strip()
     xacro_arguments = LaunchConfiguration("xacro_arguments").perform(context).strip()
@@ -118,6 +140,7 @@ def launch_setup(context, *args, **kwargs):
     controllers_to_spawn = load_controllers_to_spawn(
         params_path,
         robot_family,
+        arms,
         robot_description_root,
     )
     if not controllers_to_spawn:
@@ -133,10 +156,13 @@ def launch_setup(context, *args, **kwargs):
         ]
     )
 
-    joint_states_remap = SetRemap(src="/joint_states", dst="joint_states")
+    joint_states_remap = SetRemap(
+        src="/joint_states",
+        dst=f"/{robot_namespace}/joint_states",
+    )
     controller_joint_states_remap = SetRemap(
-        src="controller/joint_states",
-        dst="joint_states",
+        src=f"/{robot_namespace}/controller/joint_states",
+        dst=f"/{robot_namespace}/joint_states",
     )
 
     ros2_control_node = Node(
@@ -188,6 +214,7 @@ def generate_launch_description():
         [
             DeclareLaunchArgument("robot_namespace"),
             DeclareLaunchArgument("robot_family"),
+            DeclareLaunchArgument("arms", default_value="auv"),
             DeclareLaunchArgument("description_package"),
             DeclareLaunchArgument("xacro_file"),
             DeclareLaunchArgument("xacro_arguments"),

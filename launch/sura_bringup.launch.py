@@ -7,6 +7,7 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
+    DeclareLaunchArgument,
     GroupAction,
     IncludeLaunchDescription,
     OpaqueFunction,
@@ -19,16 +20,14 @@ from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.substitutions import FindPackageShare
 
 
-def load_bringup_description():
-    with open(
-        os.path.join(
-            get_package_share_directory("sura_bringup"),
-            "config",
-            "bringup_description.yaml",
-        ),
-        "r",
-        encoding="utf-8",
-    ) as f:
+def load_bringup_description(robot_namespace):
+    description_package = f"{robot_namespace}_description"
+    config_path = os.path.join(
+        get_package_share_directory(description_package),
+        "config",
+        "bringup_description.yaml",
+    )
+    with open(config_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 
@@ -36,13 +35,36 @@ def launch_value(value):
     return str(value).lower() if isinstance(value, bool) else str(value)
 
 
+def normalize_description_arms(raw_arms, xacro_file):
+    arms = str(raw_arms or "").strip().lower()
+    if arms in ("dual_alpha", "dual"):
+        return "dual"
+    if arms in ("single_alpha", "single"):
+        return "single"
+    if arms in ("auv", "none", "no_alpha", "no_arms"):
+        return "auv"
+    if not arms:
+        return "auv" if os.path.basename(xacro_file) == "cirtesub.urdf.xacro" else "dual"
+    raise RuntimeError(
+        "description.arms must be one of dual_alpha, dual, single_alpha, "
+        f"single, auv or none; got '{raw_arms}'."
+    )
+
+
 def prepare_runtime_values(context, *args, **kwargs):
-    robot_profile = load_bringup_description()
+    robot_namespace = LaunchConfiguration("robot_namespace").perform(context).strip("/")
+    if not robot_namespace:
+        raise RuntimeError("Launch argument 'robot_namespace' cannot be empty.")
+
+    robot_profile = load_bringup_description(robot_namespace)
 
     robot_profile_data = robot_profile.get("robot", {})
-    robot_namespace = str(robot_profile_data.get("name", "")).strip("/")
-    if not robot_namespace:
-        raise RuntimeError("robot.name must be defined in bringup_description.yaml")
+    profile_robot_name = str(robot_profile_data.get("name", "")).strip("/")
+    if profile_robot_name and profile_robot_name != robot_namespace:
+        raise RuntimeError(
+            f"robot.name '{profile_robot_name}' from bringup_description.yaml must match "
+            f"launch argument robot_namespace '{robot_namespace}'."
+        )
 
     environment = str(robot_profile_data.get("environment", "")).strip()
     if environment not in ("sim", "real"):
@@ -61,7 +83,15 @@ def prepare_runtime_values(context, *args, **kwargs):
     if not xacro_file:
         raise RuntimeError("description.xacro must be defined in bringup_description.yaml")
 
+    arms = normalize_description_arms(description_profile.get("arms", ""), xacro_file)
     xacro_arguments = f"robot_name:={robot_namespace} environment:={environment}"
+    if arms in ("dual", "single"):
+        use_sim = "true" if environment == "sim" else "false"
+        xacro_arguments = (
+            f"{xacro_arguments} arms:={arms} use_sim:={use_sim} "
+            f"alpha_desired_joint_states_topic:=/{robot_namespace}/alpha/desired_joint_states "
+            f"alpha_joint_states_topic:=/{robot_namespace}/alpha/joint_states"
+        )
 
     xacro_command = [
         "xacro",
@@ -87,9 +117,7 @@ def prepare_runtime_values(context, *args, **kwargs):
     imu_profile = robot_profile.get("imu", {})
     localization_profile = robot_profile.get("localization", {})
     use_sim_localization = environment == "sim" and localization == "sim"
-    if "enabled" not in localization_profile:
-        raise RuntimeError("localization.enabled must be defined in bringup_description.yaml")
-    localization_enabled = localization_profile["enabled"]
+    use_real_localization = localization == "real"
 
     localization_launch_package = str(localization_profile.get("launch_package", "")).strip()
     if not localization_launch_package:
@@ -143,6 +171,7 @@ def prepare_runtime_values(context, *args, **kwargs):
         "description_package": description_package,
         "xacro_file": xacro_file,
         "xacro_arguments": xacro_arguments,
+        "arms": arms,
         "ros2_control_params_package": params_package,
         "ros2_control_params_file": params_file,
         "diagnostics_params_package": diagnostics_params_package,
@@ -153,7 +182,7 @@ def prepare_runtime_values(context, *args, **kwargs):
         "mag_topic": mag_topic,
         "environment_is_real": environment == "real",
         "use_sim_localization": use_sim_localization,
-        "use_real_localization": localization_enabled and not use_sim_localization,
+        "use_real_localization": use_real_localization,
         "localization_launch_package": localization_launch_package,
         "localization_launch_file": localization_launch_file,
         "localization_publish_tf": localization_publish_tf,
@@ -217,6 +246,7 @@ def generate_launch_description():
                     ("description_package", LaunchConfiguration("description_package")),
                     ("xacro_file", LaunchConfiguration("xacro_file")),
                     ("xacro_arguments", LaunchConfiguration("xacro_arguments")),
+                    ("arms", LaunchConfiguration("arms")),
                     (
                         "ros2_control_params_package",
                         LaunchConfiguration("ros2_control_params_package"),
@@ -237,6 +267,7 @@ def generate_launch_description():
                     )
                 ),
                 launch_arguments=[
+                    ("robot_namespace", robot_namespace),
                     ("environment", LaunchConfiguration("environment")),
                     ("cameras", LaunchConfiguration("cameras")),
                 ],
@@ -295,6 +326,20 @@ def generate_launch_description():
                     "--yaw", "3.1416",
                     "--frame-id", "world_ned",
                     "--child-frame-id", "cirtesu_tank",
+                ],
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("cirtesu_tank_aruco_localization"),
+                            "launch",
+                            "aruco_map_localization.launch.py",
+                        ]
+                    )
+                ),
+                launch_arguments=[
+                    ("robot_namespace", robot_namespace),
                 ],
             ),
         ],
@@ -370,6 +415,7 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
+            DeclareLaunchArgument("robot_namespace", default_value=""),
             runtime_values,
             robot_description_launch,
             ros2_control_launch,
