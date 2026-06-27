@@ -90,7 +90,8 @@ def prepare_runtime_values(context, *args, **kwargs):
         xacro_arguments = (
             f"{xacro_arguments} arms:={arms} use_sim:={use_sim} "
             f"alpha_desired_joint_states_topic:=/{robot_namespace}/alpha/desired_joint_states "
-            f"alpha_joint_states_topic:=/{robot_namespace}/alpha/joint_states"
+            f"alpha_joint_states_topic:=/{robot_namespace}/stonefish/alpha/joint_states "
+            f"alpha_normalized_joint_states_topic:=/{robot_namespace}/alpha/joint_states"
         )
 
     xacro_command = [
