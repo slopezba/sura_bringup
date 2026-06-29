@@ -18,6 +18,7 @@ CONTROLLER_GROUPS_BY_FAMILY = {
 
 DUAL_ALPHA_CONTROLLERS = [
     "joint_state_broadcaster",
+    "alpha_joint_state_broadcaster",
     "alpha_left_forward_velocity_controller",
     "alpha_right_forward_velocity_controller",
     "alpha_left_cartesian_velocity_controller",
@@ -29,6 +30,7 @@ DUAL_ALPHA_CONTROLLERS = [
 
 SINGLE_ALPHA_CONTROLLERS = [
     "joint_state_broadcaster",
+    "alpha_joint_state_broadcaster",
     "alpha_left_forward_velocity_controller",
     "alpha_left_cartesian_velocity_controller",
     "alpha_left_joint_trajectory_controller",
