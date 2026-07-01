@@ -46,13 +46,17 @@ def find_controller_manager_parameters(data):
     return data.get("controller_manager", {}).get("ros__parameters", {})
 
 
+def controller_name_from_hardware_route(controller_route):
+    return os.path.basename(controller_route.strip())
+
+
 def discover_sensor_broadcasters(robot_description_root):
     broadcasters = []
     for ros2_control in robot_description_root.findall("ros2_control"):
         for sensor in ros2_control.findall("sensor"):
             for param in sensor.findall("param"):
                 if param.attrib.get("name") == "broadcaster" and param.text:
-                    broadcasters.append(param.text.strip())
+                    broadcasters.append(controller_name_from_hardware_route(param.text))
     return broadcasters
 
 
@@ -62,7 +66,7 @@ def discover_joint_controllers(robot_description_root):
         for joint in ros2_control.findall("joint"):
             for param in joint.findall("param"):
                 if param.attrib.get("name") == "controller" and param.text:
-                    controllers.append(param.text.strip())
+                    controllers.append(controller_name_from_hardware_route(param.text))
     return controllers
 
 
