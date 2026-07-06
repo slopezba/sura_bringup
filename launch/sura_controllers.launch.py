@@ -6,9 +6,13 @@ import yaml
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, EmitEvent, GroupAction, OpaqueFunction, RegisterEventHandler
+from launch.events import matches_action
 from launch.substitutions import Command, LaunchConfiguration
-from launch_ros.actions import Node, SetRemap
+from launch_ros.actions import LifecycleNode, Node, SetRemap
+from launch_ros.event_handlers import OnStateTransition
+from launch_ros.events.lifecycle import ChangeState
+from lifecycle_msgs.msg import Transition
 
 
 CONTROLLER_GROUPS_BY_FAMILY = {
@@ -142,6 +146,7 @@ def launch_setup(context, *args, **kwargs):
     xacro_arguments = LaunchConfiguration("xacro_arguments").perform(context).strip()
     params_package = LaunchConfiguration("ros2_control_params_package").perform(context).strip()
     params_file = LaunchConfiguration("ros2_control_params_file").perform(context).strip()
+    arbitrator_frequency_hz = LaunchConfiguration("arbitrator_frequency_hz").perform(context).strip()
 
     description_path = os.path.join(get_package_share_directory(description_package), xacro_file)
     params_path = os.path.join(get_package_share_directory(params_package), params_file)
@@ -208,12 +213,49 @@ def launch_setup(context, *args, **kwargs):
         if not is_broadcaster(controller)
     ]
 
+    controller_arbitrator = LifecycleNode(
+        package="sura_controllers",
+        executable="controller_arbitrator",
+        name="controller_arbitrator",
+        namespace="",
+        output="screen",
+        parameters=[
+            {
+                "robot_namespace": robot_namespace,
+                "arbitration_frequency_hz": float(arbitrator_frequency_hz),
+            }
+        ],
+    )
+    configure_controller_arbitrator = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=matches_action(controller_arbitrator),
+            transition_id=Transition.TRANSITION_CONFIGURE,
+        )
+    )
+    activate_controller_arbitrator = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=controller_arbitrator,
+            goal_state="inactive",
+            entities=[
+                EmitEvent(
+                    event=ChangeState(
+                        lifecycle_node_matcher=matches_action(controller_arbitrator),
+                        transition_id=Transition.TRANSITION_ACTIVATE,
+                    )
+                )
+            ],
+        )
+    )
+
     return [
         GroupAction(
             [
                 joint_states_remap,
                 controller_joint_states_remap,
                 ros2_control_node,
+                controller_arbitrator,
+                configure_controller_arbitrator,
+                activate_controller_arbitrator,
                 *broadcaster_spawners,
                 *controller_spawners,
             ]
@@ -232,6 +274,7 @@ def generate_launch_description():
             DeclareLaunchArgument("xacro_arguments"),
             DeclareLaunchArgument("ros2_control_params_package"),
             DeclareLaunchArgument("ros2_control_params_file"),
+            DeclareLaunchArgument("arbitrator_frequency_hz", default_value="5.0"),
             OpaqueFunction(function=launch_setup),
         ]
     )
