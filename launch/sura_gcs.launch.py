@@ -23,6 +23,7 @@ def generate_launch_description():
     xacro_arguments = LaunchConfiguration("xacro_arguments")
     use_sim_time = LaunchConfiguration("use_sim_time")
     teleop_enabled = LaunchConfiguration("teleop_enabled")
+    teleop = LaunchConfiguration("teleop")
 
     rviz_config_file = os.path.join(bringup_share, "config", "cirtesub.rviz")
     teleop_launch_file = os.path.join(teleop_share, "launch", "teleop.launch.py")
@@ -71,7 +72,10 @@ def generate_launch_description():
 
     teleop_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(teleop_launch_file),
-        launch_arguments={"robot_namespace": robot_namespace}.items(),
+        launch_arguments={
+            "robot_namespace": robot_namespace,
+            "teleop": teleop,
+        }.items(),
         condition=IfCondition(teleop_enabled),
     )
 
@@ -121,6 +125,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument("use_sim_time", default_value="false"),
         DeclareLaunchArgument("teleop_enabled", default_value="true"),
+        DeclareLaunchArgument("teleop", default_value="sim"),
         teleop_launch,
         rviz_node,
     ])

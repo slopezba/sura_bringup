@@ -4,9 +4,8 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /TF1/Frames1
         - /MarkerArray1/Namespaces1
-      Splitter Ratio: 0.48571428656578064
+      Splitter Ratio: 0.6584766507148743
     Tree Height: 549
   - Class: rviz_common/Selection
     Name: Selection
@@ -54,13 +53,7 @@ Visualization Manager:
         All Enabled: false
         cirtesu_tank:
           Value: false
-        cirtesub/DVL:
-          Value: true
         cirtesub/GPS:
-          Value: true
-        cirtesub/IMU:
-          Value: true
-        cirtesub/Pressure:
           Value: true
         cirtesub/Thruster_down_backleft:
           Value: false
@@ -81,7 +74,7 @@ Visualization Manager:
         cirtesub/alpha_left/base_link:
           Value: false
         cirtesub/alpha_left/ee_base_link:
-          Value: false
+          Value: true
         cirtesub/alpha_left/m1_link:
           Value: false
         cirtesub/alpha_left/m2_1_1_link:
@@ -101,11 +94,11 @@ Visualization Manager:
         cirtesub/alpha_left/standard_jaws_rs1_139_link:
           Value: false
         cirtesub/alpha_left/standard_jaws_tool:
-          Value: true
+          Value: false
         cirtesub/alpha_right/base_link:
           Value: false
         cirtesub/alpha_right/ee_base_link:
-          Value: false
+          Value: true
         cirtesub/alpha_right/m1_link:
           Value: false
         cirtesub/alpha_right/m2_1_1_link:
@@ -125,12 +118,20 @@ Visualization Manager:
         cirtesub/alpha_right/standard_jaws_rs1_139_link:
           Value: false
         cirtesub/alpha_right/standard_jaws_tool:
-          Value: true
+          Value: false
         cirtesub/base_link:
           Value: true
         cirtesub/down_camera/camera:
           Value: true
+        cirtesub/down_camera/optical_frame:
+          Value: true
+        cirtesub/dvl_link:
+          Value: true
         cirtesub/front_camera/camera:
+          Value: false
+        cirtesub/imu_link:
+          Value: true
+        cirtesub/pressure_link:
           Value: true
         world:
           Value: false
@@ -138,7 +139,7 @@ Visualization Manager:
           Value: true
         world_ned:
           Value: false
-      Marker Scale: 1
+      Marker Scale: 0.5
       Name: TF
       Show Arrows: true
       Show Axes: true
@@ -149,13 +150,7 @@ Visualization Manager:
             cirtesu_tank:
               {}
             cirtesub/base_link:
-              cirtesub/DVL:
-                {}
               cirtesub/GPS:
-                {}
-              cirtesub/IMU:
-                {}
-              cirtesub/Pressure:
                 {}
               cirtesub/Thruster_down_backleft:
                 {}
@@ -206,8 +201,15 @@ Visualization Manager:
                               cirtesub/alpha_right/standard_jaws_tool:
                                 {}
               cirtesub/down_camera/camera:
+                cirtesub/down_camera/optical_frame:
+                  {}
+              cirtesub/dvl_link:
                 {}
               cirtesub/front_camera/camera:
+                {}
+              cirtesub/imu_link:
+                {}
+              cirtesub/pressure_link:
                 {}
             world_enu:
               {}
@@ -231,19 +233,7 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        cirtesub/DVL:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         cirtesub/GPS:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cirtesub/IMU:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cirtesub/Pressure:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -406,7 +396,23 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        cirtesub/down_camera/optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        cirtesub/dvl_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         cirtesub/front_camera/camera:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        cirtesub/imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        cirtesub/pressure_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -418,25 +424,94 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
-    - Class: moveit_rviz_plugin/MotionPlanning
-      Enabled: true
+    - Acceleration_Scaling_Factor: 0.1
+      Class: moveit_rviz_plugin/MotionPlanning
+      Enabled: false
+      Move Group Namespace: ""
+      MoveIt_Allow_Approximate_IK: false
+      MoveIt_Allow_External_Program: false
+      MoveIt_Allow_Replanning: false
+      MoveIt_Allow_Sensor_Positioning: false
+      MoveIt_Planning_Attempts: 10
+      MoveIt_Planning_Time: 5
+      MoveIt_Use_Cartesian_Path: false
+      MoveIt_Use_Constraint_Aware_IK: false
+      MoveIt_Workspace:
+        Center:
+          X: 0
+          Y: 0
+          Z: 0
+        Size:
+          X: 2
+          Y: 2
+          Z: 2
       Name: MotionPlanning
       Planned Path:
+        Color Enabled: false
+        Interrupt Display: false
+        Links:
+          All Links Enabled: true
+          Expand Joint Details: false
+          Expand Link Details: false
+          Expand Tree: false
+          Link Tree Style: Links in Alphabetic Order
         Loop Animation: true
         Robot Alpha: 0.5
+        Robot Color: 150; 50; 150
         Show Robot Collision: false
         Show Robot Visual: true
         Show Trail: false
         State Display Time: 0.05 s
+        Trail Step Size: 1
         Trajectory Topic: /cirtesub/moveit/display_planned_path
+        Use Sim Time: false
+      Planning Metrics:
+        Payload: 1
+        Show Joint Torques: false
+        Show Manipulability: false
+        Show Manipulability Index: false
+        Show Weight Limit: false
+        TextHeight: 0.07999999821186066
+      Planning Request:
+        Colliding Link Color: 255; 0; 0
+        Goal State Alpha: 1
+        Goal State Color: 250; 128; 0
+        Interactive Marker Size: 0
+        Joint Violation Color: 255; 0; 255
+        Planning Group: alpha_left
+        Query Goal State: true
+        Query Start State: false
+        Show Workspace: false
+        Start State Alpha: 1
+        Start State Color: 0; 255; 0
       Planning Scene Topic: /cirtesub/moveit/monitored_planning_scene
-      Value: true
+      Robot Description: robot_description
+      Scene Geometry:
+        Scene Alpha: 0.8999999761581421
+        Scene Color: 50; 230; 50
+        Scene Display Time: 0.009999999776482582
+        Show Scene Geometry: true
+        Voxel Coloring: Z-Axis
+        Voxel Rendering: Occupied Voxels
+      Scene Robot:
+        Attached Body Color: 150; 50; 150
+        Links:
+          All Links Enabled: true
+          Expand Joint Details: false
+          Expand Link Details: false
+          Expand Tree: false
+          Link Tree Style: Links in Alphabetic Order
+        Robot Alpha: 1
+        Show Robot Collision: false
+        Show Robot Visual: true
+      Value: false
+      Velocity_Scaling_Factor: 0.1
     - Alpha: 1
       Axes Length: 0.5
       Axes Radius: 0.05000000074505806
       Class: rviz_default_plugins/Pose
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: Base_pose_target
@@ -449,14 +524,14 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /cirtesub/controller/position_hold/setpoint
-      Value: true
+        Value: /cirtesub/controller/task_priority/tasks/base_pose/target
+      Value: false
     - Alpha: 1
       Axes Length: 0.5
       Axes Radius: 0.05000000074505806
       Class: rviz_default_plugins/Pose
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: Left_arm _pose_target
@@ -469,17 +544,17 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /task_priority_controller/tasks/base_pose/target
-      Value: true
+        Value: /cirtesub/controller/task_priority/tasks/left_pose/target
+      Value: false
     - Alpha: 1
       Axes Length: 0.5
       Axes Radius: 0.05000000074505806
       Class: rviz_default_plugins/Pose
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
-      Name: Left_arm _pose_target
+      Name: Right_arm _pose_target
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Axes
@@ -489,8 +564,8 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /task_priority_controller/tasks/base_pose/target
-      Value: true
+        Value: /cirtesub/controller/task_priority/tasks/right_pose/target
+      Value: false
     - Angle Tolerance: 0.10000000149011612
       Class: rviz_default_plugins/Odometry
       Covariance:
@@ -563,7 +638,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: true
+      Enabled: false
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: PoseWithCovariance
@@ -577,6 +652,33 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /cirtesub/sensors/aruco/pose_enu
+      Value: false
+    - Class: rviz_default_plugins/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: false
+      Interactive Markers Namespace: /cirtesub/controller/task_priority/tasks/base_pose/interactive_marker
+      Name: Base_InteractiveMarkers
+      Show Axes: true
+      Show Descriptions: true
+      Show Visual Aids: true
+      Value: false
+    - Class: rviz_default_plugins/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Interactive Markers Namespace: /cirtesub/controller/task_priority/tasks/left_pose/interactive_marker
+      Name: Left_arm_InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: true
+      Value: true
+    - Class: rviz_default_plugins/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Interactive Markers Namespace: /cirtesub/controller/task_priority/tasks/right_pose/interactive_marker
+      Name: Right_arm_InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: true
       Value: true
   Enabled: true
   Global Options:
@@ -624,25 +726,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 22.346981048583984
+      Distance: 4.933157444000244
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 5.260617256164551
-        Y: 0.8194555640220642
-        Z: 8.188302993774414
+        X: -1.4551156759262085
+        Y: -2.873685121536255
+        Z: 3.4912397861480713
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: true
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7347971200942993
+      Pitch: 0.18979796767234802
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.034372329711914
+      Yaw: 5.444404602050781
     Saved: ~
 Window Geometry:
   Displays:
@@ -650,7 +752,11 @@ Window Geometry:
   Height: 846
   Hide Left Dock: false
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd0000000400000000000001c9000002b0fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000002b0000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f000002b0fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d000002b0000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000005520000003efc0100000002fb0000000800540069006d0065010000000000000552000002fb00fffffffb0000000800540069006d0065010000000000000450000000000000000000000383000002b000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  MotionPlanning:
+    collapsed: false
+  MotionPlanning - Trajectory Slider:
+    collapsed: false
+  QMainWindow State: 000000ff00000000fd000000040000000000000199000002b0fc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000002b0000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670000000165000001880000017d00ffffff000000010000010f000002b0fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d000002b0000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000005520000003efc0100000002fb0000000800540069006d0065010000000000000552000002fb00fffffffb0000000800540069006d00650100000000000004500000000000000000000003b3000002b000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -660,5 +766,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1362
-  X: 445
-  Y: 108
+  X: 476
+  Y: 66
