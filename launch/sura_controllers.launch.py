@@ -6,7 +6,13 @@ import yaml
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, OpaqueFunction
+from launch.actions import (
+    DeclareLaunchArgument,
+    GroupAction,
+    OpaqueFunction,
+    RegisterEventHandler,
+)
+from launch.event_handlers import OnProcessExit
 from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node, SetRemap
 
@@ -117,9 +123,11 @@ def load_controllers_to_spawn(params_file, robot_family, arms, robot_description
     ]
 
 
-def spawner(controller_name, controller_manager, inactive=True):
+def spawner(controller_name, controller_manager, inactive=True, load_only=False):
     arguments = [controller_name, "--controller-manager", controller_manager]
-    if inactive:
+    if load_only:
+        arguments.append("--load-only")
+    elif inactive:
         arguments.append("--inactive")
 
     return Node(
@@ -136,6 +144,23 @@ def is_broadcaster(controller_name):
         controller_name == "joint_state_broadcaster"
         or controller_name.endswith("_broadcaster")
     )
+
+
+def chain_spawners(spawners):
+    if not spawners:
+        return []
+
+    actions = [spawners[0]]
+    actions.extend(
+        RegisterEventHandler(
+            OnProcessExit(
+                target_action=current_spawner,
+                on_exit=[next_spawner],
+            )
+        )
+        for current_spawner, next_spawner in zip(spawners, spawners[1:])
+    )
+    return actions
 
 
 def launch_setup(context, *args, **kwargs):
@@ -208,10 +233,12 @@ def launch_setup(context, *args, **kwargs):
             controller,
             controller_manager,
             inactive=True,
+            load_only=controller == "task_priority_controller",
         )
         for controller in controllers_to_spawn
         if not is_broadcaster(controller)
     ]
+    spawner_chain = chain_spawners([*broadcaster_spawners, *controller_spawners])
 
     return [
         GroupAction(
@@ -219,8 +246,7 @@ def launch_setup(context, *args, **kwargs):
                 joint_states_remap,
                 controller_joint_states_remap,
                 ros2_control_node,
-                *broadcaster_spawners,
-                *controller_spawners,
+                *spawner_chain,
             ]
         )
     ]
