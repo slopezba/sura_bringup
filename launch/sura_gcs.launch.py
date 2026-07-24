@@ -24,7 +24,7 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time")
     teleop_enabled = LaunchConfiguration("teleop_enabled")
 
-    rviz_config_file = os.path.join(bringup_share, "config", "cirtesub.rviz")
+    rviz_config_file = os.path.join(bringup_share, "config", "sura.rviz")
     teleop_launch_file = os.path.join(teleop_share, "launch", "teleop.launch.py")
     planning_pipelines = os.path.join(cirtesub_share, "moveit2", "planning_pipelines.yaml")
     ompl_planning = os.path.join(cirtesub_share, "moveit2", "ompl_planning.yaml")
