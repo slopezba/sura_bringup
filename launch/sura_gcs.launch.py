@@ -1,35 +1,59 @@
 import os
 
+import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
-from launch_ros.substitutions import FindPackageShare
 
 
-def generate_launch_description():
-    bringup_share = get_package_share_directory("sura_bringup")
-    cirtesub_share = get_package_share_directory("cirtesub_description")
+def load_bringup_description(description_share):
+    config_path = os.path.join(description_share, "config", "bringup_description.yaml")
+    if not os.path.exists(config_path):
+        return {}
+
+    with open(config_path, "r", encoding="utf-8") as config_file:
+        return yaml.safe_load(config_file) or {}
+
+
+def launch_setup(context, *args, **kwargs):
     teleop_share = get_package_share_directory("sura_teleop")
-    robot_namespace = LaunchConfiguration("robot_namespace")
-    robot_description_package = LaunchConfiguration("robot_description_package")
-    robot_description_file = LaunchConfiguration("robot_description_file")
-    robot_description_semantic_package = LaunchConfiguration("robot_description_semantic_package")
-    robot_description_semantic_file = LaunchConfiguration("robot_description_semantic_file")
-    xacro_arguments = LaunchConfiguration("xacro_arguments")
+    robot_namespace = LaunchConfiguration("robot_namespace").perform(context).strip("/")
+    robot_description_package = LaunchConfiguration("robot_description_package").perform(context).strip()
+    robot_description_file = LaunchConfiguration("robot_description_file").perform(context).strip()
+    rviz_config_file = LaunchConfiguration("rviz_config_file").perform(context).strip()
+    xacro_arguments = LaunchConfiguration("xacro_arguments").perform(context).strip()
     use_sim_time = LaunchConfiguration("use_sim_time")
     teleop_enabled = LaunchConfiguration("teleop_enabled")
 
-    rviz_config_file = os.path.join(bringup_share, "config", "cirtesub.rviz")
+    if not robot_namespace:
+        raise RuntimeError("robot_namespace must be defined")
+
+    if not robot_description_package:
+        robot_description_package = f"{robot_namespace}_description"
+
+    description_share = get_package_share_directory(robot_description_package)
+    bringup_description = load_bringup_description(description_share)
+    description_profile = bringup_description.get("description", {})
+
+    if not robot_description_file:
+        robot_description_file = str(description_profile.get("xacro", "")).strip()
+    if not robot_description_file:
+        robot_description_file = os.path.join("urdf", f"{robot_namespace}.urdf.xacro")
+
+    if not rviz_config_file:
+        rviz_config_file = os.path.join(description_share, "config", f"{robot_namespace}.rviz")
+
+    if not xacro_arguments:
+        environment = str(bringup_description.get("robot", {}).get("environment", "sim")).strip()
+        xacro_arguments = f"robot_name:={robot_namespace} environment:={environment}"
+
     teleop_launch_file = os.path.join(teleop_share, "launch", "teleop.launch.py")
-    planning_pipelines = os.path.join(cirtesub_share, "moveit2", "planning_pipelines.yaml")
-    ompl_planning = os.path.join(cirtesub_share, "moveit2", "ompl_planning.yaml")
-    joint_limits = os.path.join(cirtesub_share, "moveit2", "joint_limits.yaml")
-    kinematics = os.path.join(cirtesub_share, "moveit2", "kinematics.yaml")
+    robot_description_path = os.path.join(description_share, robot_description_file)
 
     robot_description = {
         "robot_description": ParameterValue(
@@ -37,32 +61,9 @@ def generate_launch_description():
                 [
                     PathJoinSubstitution([FindExecutable(name="xacro")]),
                     " ",
-                    PathJoinSubstitution(
-                        [FindPackageShare(robot_description_package), robot_description_file]
-                    ),
+                    robot_description_path,
                     " ",
                     xacro_arguments,
-                ]
-            ),
-            value_type=str,
-        )
-    }
-
-    robot_description_semantic = {
-        "robot_description_semantic": ParameterValue(
-            Command(
-                [
-                    PathJoinSubstitution([FindExecutable(name="xacro")]),
-                    " ",
-                    PathJoinSubstitution(
-                        [
-                            FindPackageShare(robot_description_semantic_package),
-                            robot_description_semantic_file,
-                        ]
-                    ),
-                    " ",
-                    "robot_name:=",
-                    robot_namespace,
                 ]
             ),
             value_type=str,
@@ -83,44 +84,21 @@ def generate_launch_description():
         arguments=["-d", rviz_config_file],
         parameters=[
             robot_description,
-            robot_description_semantic,
-            planning_pipelines,
-            ompl_planning,
-            joint_limits,
-            kinematics,
             {"use_sim_time": use_sim_time},
         ],
     )
 
+    return [teleop_launch, rviz_node]
+
+
+def generate_launch_description():
     return LaunchDescription([
-        DeclareLaunchArgument("robot_namespace", default_value="cirtesub"),
-        DeclareLaunchArgument(
-            "robot_description_package",
-            default_value="cirtesub_description",
-        ),
-        DeclareLaunchArgument(
-            "robot_description_file",
-            default_value=os.path.join("urdf", "cirtesub_dual_alpha.urdf.xacro"),
-        ),
-        DeclareLaunchArgument(
-            "robot_description_semantic_package",
-            default_value="cirtesub_description",
-        ),
-        DeclareLaunchArgument(
-            "robot_description_semantic_file",
-            default_value=os.path.join("moveit2", "cirtesub_dual_alpha.srdf.xacro"),
-        ),
-        DeclareLaunchArgument(
-            "xacro_arguments",
-            default_value=(
-                "robot_name:=cirtesub environment:=sim arms:=dual use_sim:=true "
-                "alpha_desired_joint_states_topic:=/cirtesub/alpha/desired_joint_states "
-                "alpha_joint_states_topic:=/cirtesub/stonefish/alpha/joint_states "
-                "alpha_normalized_joint_states_topic:=/cirtesub/alpha/joint_states"
-            ),
-        ),
+        DeclareLaunchArgument("robot_namespace", default_value=""),
+        DeclareLaunchArgument("robot_description_package", default_value=""),
+        DeclareLaunchArgument("robot_description_file", default_value=""),
+        DeclareLaunchArgument("rviz_config_file", default_value=""),
+        DeclareLaunchArgument("xacro_arguments", default_value=""),
         DeclareLaunchArgument("use_sim_time", default_value="false"),
         DeclareLaunchArgument("teleop_enabled", default_value="true"),
-        teleop_launch,
-        rviz_node,
+        OpaqueFunction(function=launch_setup),
     ])
