@@ -12,7 +12,6 @@ from launch.actions import (
     IncludeLaunchDescription,
     OpaqueFunction,
     SetLaunchConfiguration,
-    TimerAction,
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -426,21 +425,6 @@ def generate_launch_description():
         ],
     )
 
-    bt_runner_launch = TimerAction(
-        period=10.0,
-        actions=[
-            Node(
-                package="sura_bt",
-                executable="bt_runner",
-                name="sura_bt_runner",
-                output="screen",
-                arguments=[
-                    ["robot_namespace:=", robot_namespace],
-                ],
-            ),
-        ],
-    )
-
     return LaunchDescription(
         [
             DeclareLaunchArgument("robot_namespace", default_value=""),
@@ -454,6 +438,5 @@ def generate_launch_description():
             navigator_launch,
             diagnostics_launch,
             actions_launch,
-            bt_runner_launch,
         ]
     )
