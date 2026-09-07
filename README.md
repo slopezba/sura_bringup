@@ -126,14 +126,12 @@ It starts:
 
 | What it starts | Notes |
 | --- | --- |
-| RViz | Using `config/sura.rviz`. |
+| RViz | Using `<robot_namespace>_description/config/<robot_namespace>.rviz` when available, otherwise `sura_bringup/config/sura.rviz`. |
 | Teleop | Through `sura_teleop/launch/teleop.launch.py`, when `teleop_enabled:=true`. |
 
-It also loads robot description and MoveIt configuration for visualization.
-For a robot different from the default one, pass the matching
-`robot_description_package`, `robot_description_file`,
-`robot_description_semantic_package`, `robot_description_semantic_file` and
-`xacro_arguments`.
+It reads `<robot_namespace>_description/config/bringup_description.yaml` to
+select the robot description and environment. MoveIt configuration is loaded
+only when the robot description package provides it.
 
 This launch is not required for the main robot bringup.
 
