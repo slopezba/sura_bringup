@@ -361,7 +361,7 @@ def generate_launch_description():
                 ),
                 launch_arguments=[
                     ("robot_namespace", robot_namespace),
-                    ("publish_tf", LaunchConfiguration("localization_publish_tf")),
+                    ("publish_tf", "false"),
                     ("datum_latitude", LaunchConfiguration("localization_datum_latitude")),
                     ("datum_longitude", LaunchConfiguration("localization_datum_longitude")),
                     ("datum_heading", LaunchConfiguration("localization_datum_heading")),
