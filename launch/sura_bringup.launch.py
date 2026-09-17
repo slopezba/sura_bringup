@@ -112,6 +112,11 @@ def prepare_runtime_values(context, *args, **kwargs):
     robot_family = robot_description_root.attrib.get("family", "").strip()
     if not robot_family:
         raise RuntimeError("The rendered robot xacro must define robot family.")
+    if robot_family not in ("surface", "underwater"):
+        raise RuntimeError(
+            f"The rendered robot xacro has unsupported family '{robot_family}'. "
+            "Expected 'surface' or 'underwater'."
+        )
 
     ros2_control_profile = robot_profile.get("ros2_control", {})
     diagnostics_profile = robot_profile.get("diagnostics", {})
@@ -422,6 +427,7 @@ def generate_launch_description():
         ),
         launch_arguments=[
             ("robot_namespace", robot_namespace),
+            ("robot_family", LaunchConfiguration("robot_family")),
         ],
     )
 
