@@ -10,6 +10,7 @@ from launch.actions import DeclareLaunchArgument, EmitEvent, GroupAction, Opaque
 from launch.events import matches_action
 from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import LifecycleNode, Node, SetRemap
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.event_handlers import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
 from lifecycle_msgs.msg import Transition
@@ -188,7 +189,7 @@ def launch_setup(context, *args, **kwargs):
         namespace="controller",
         parameters=[
             params_path,
-            {"robot_description": robot_description_command},
+            {"robot_description": ParameterValue(robot_description_command, value_type=str)},
         ],
         output="screen",
     )
