@@ -18,7 +18,6 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.substitutions import FindPackageShare
-from launch_ros.parameter_descriptions import ParameterValue
 
 
 def load_bringup_description(robot_namespace):
@@ -91,7 +90,8 @@ def prepare_runtime_values(context, *args, **kwargs):
         xacro_arguments = (
             f"{xacro_arguments} arms:={arms} use_sim:={use_sim} "
             f"alpha_desired_joint_states_topic:=/{robot_namespace}/alpha/desired_joint_states "
-            f"alpha_joint_states_topic:=/{robot_namespace}/alpha/joint_states"
+            f"alpha_joint_states_topic:=/{robot_namespace}/stonefish/alpha/joint_states "
+            f"alpha_normalized_joint_states_topic:=/{robot_namespace}/alpha/joint_states"
         )
 
     xacro_command = [
@@ -112,6 +112,11 @@ def prepare_runtime_values(context, *args, **kwargs):
     robot_family = robot_description_root.attrib.get("family", "").strip()
     if not robot_family:
         raise RuntimeError("The rendered robot xacro must define robot family.")
+    if robot_family not in ("surface", "underwater"):
+        raise RuntimeError(
+            f"The rendered robot xacro has unsupported family '{robot_family}'. "
+            "Expected 'surface' or 'underwater'."
+        )
 
     ros2_control_profile = robot_profile.get("ros2_control", {})
     diagnostics_profile = robot_profile.get("diagnostics", {})
@@ -361,7 +366,7 @@ def generate_launch_description():
                 ),
                 launch_arguments=[
                     ("robot_namespace", robot_namespace),
-                    ("publish_tf", LaunchConfiguration("localization_publish_tf")),
+                    ("publish_tf", "false"),
                     ("datum_latitude", LaunchConfiguration("localization_datum_latitude")),
                     ("datum_longitude", LaunchConfiguration("localization_datum_longitude")),
                     ("datum_heading", LaunchConfiguration("localization_datum_heading")),
@@ -369,35 +374,6 @@ def generate_launch_description():
             ),
         ],
         condition=IfCondition(LaunchConfiguration("use_real_localization")),
-    )
-
-    thruster_force_publisher = GroupAction(
-        [
-            PushRosNamespace(robot_namespace),
-            Node(
-                package="sura_hardware_interface",
-                executable="thruster_force_publisher",
-                name="thruster_force_publisher",
-                output="screen",
-                parameters=[
-                    {
-                        "robot_namespace": robot_namespace,
-                        "robot_description_topic": ParameterValue(
-                            ["/", robot_namespace, "/robot_description"],
-                            value_type=str,
-                        ),
-                        "input_topic": ParameterValue(
-                            ["/", robot_namespace, "/controller/body_force/output"],
-                            value_type=str,
-                        ),
-                        "output_topic": ParameterValue(
-                            ["/", robot_namespace, "/controller/thruster_forces"],
-                            value_type=str,
-                        ),
-                    }
-                ],
-            ),
-        ]
     )
 
     navigator_launch = GroupAction(
@@ -443,6 +419,18 @@ def generate_launch_description():
         ]
     )
 
+    actions_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution(
+                [FindPackageShare("sura_actions"), "launch", "actions.launch.py"]
+            )
+        ),
+        launch_arguments=[
+            ("robot_namespace", robot_namespace),
+            ("robot_family", LaunchConfiguration("robot_family")),
+        ],
+    )
+
     return LaunchDescription(
         [
             DeclareLaunchArgument("robot_namespace", default_value=""),
@@ -452,9 +440,9 @@ def generate_launch_description():
             # cameras_launch,
             imu_launch,
             sim_tf_launch,
-            thruster_force_publisher,
             real_localization_launch,
             navigator_launch,
             diagnostics_launch,
+            actions_launch,
         ]
     )
