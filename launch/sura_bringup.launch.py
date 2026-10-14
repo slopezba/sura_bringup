@@ -258,23 +258,23 @@ def generate_launch_description():
         ]
     )
 
-    cameras_launch = GroupAction(
-        [
-            PushRosNamespace(robot_namespace),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution(
-                        [FindPackageShare("sura_cameras"), "launch", "cameras.launch.py"]
-                    )
-                ),
-                launch_arguments=[
-                    ("robot_namespace", robot_namespace),
-                    ("environment", LaunchConfiguration("environment")),
-                    ("cameras", LaunchConfiguration("cameras")),
-                ],
-            ),
-        ],
-    )
+    # cameras_launch = GroupAction(
+    #     [
+    #         PushRosNamespace(robot_namespace),
+    #         IncludeLaunchDescription(
+    #             PythonLaunchDescriptionSource(
+    #                 PathJoinSubstitution(
+    #                     [FindPackageShare("sura_cameras"), "launch", "cameras.launch.py"]
+    #                 )
+    #             ),
+    #             launch_arguments=[
+    #                 ("robot_namespace", robot_namespace),
+    #                 ("environment", LaunchConfiguration("environment")),
+    #                 ("cameras", LaunchConfiguration("cameras")),
+    #             ],
+    #         ),
+    #     ],
+    # )
 
     imu_launch = GroupAction(
         [
@@ -431,7 +431,7 @@ def generate_launch_description():
             runtime_values,
             robot_description_launch,
             ros2_control_launch,
-            cameras_launch,
+            # cameras_launch,
             imu_launch,
             sim_tf_launch,
             real_localization_launch,
