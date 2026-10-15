@@ -5,7 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /MarkerArray1/Namespaces1
-      Splitter Ratio: 0.6584766507148743
+      Splitter Ratio: 0.7247706651687622
     Tree Height: 549
   - Class: rviz_common/Selection
     Name: Selection
@@ -54,7 +54,7 @@ Visualization Manager:
         cirtesu_tank:
           Value: false
         cirtesub/GPS:
-          Value: true
+          Value: false
         cirtesub/Thruster_down_backleft:
           Value: false
         cirtesub/Thruster_down_backright:
@@ -74,7 +74,7 @@ Visualization Manager:
         cirtesub/alpha_left/base_link:
           Value: false
         cirtesub/alpha_left/ee_base_link:
-          Value: true
+          Value: false
         cirtesub/alpha_left/m1_link:
           Value: false
         cirtesub/alpha_left/m2_1_1_link:
@@ -98,7 +98,7 @@ Visualization Manager:
         cirtesub/alpha_right/base_link:
           Value: false
         cirtesub/alpha_right/ee_base_link:
-          Value: true
+          Value: false
         cirtesub/alpha_right/m1_link:
           Value: false
         cirtesub/alpha_right/m2_1_1_link:
@@ -122,23 +122,23 @@ Visualization Manager:
         cirtesub/base_link:
           Value: true
         cirtesub/down_camera/camera:
-          Value: true
+          Value: false
         cirtesub/down_camera/optical_frame:
-          Value: true
+          Value: false
         cirtesub/dvl_link:
           Value: true
         cirtesub/front_camera/camera:
           Value: false
         cirtesub/imu_link:
-          Value: true
+          Value: false
         cirtesub/pressure_link:
-          Value: true
+          Value: false
         world:
           Value: false
         world_enu:
-          Value: true
-        world_ned:
           Value: false
+        world_ned:
+          Value: true
       Marker Scale: 0.5
       Name: TF
       Show Arrows: true
@@ -511,7 +511,7 @@ Visualization Manager:
       Axes Radius: 0.05000000074505806
       Class: rviz_default_plugins/Pose
       Color: 255; 25; 0
-      Enabled: false
+      Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: Base_pose_target
@@ -525,13 +525,13 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /cirtesub/controller/task_priority/tasks/base_pose/target
-      Value: false
+      Value: true
     - Alpha: 1
-      Axes Length: 0.5
-      Axes Radius: 0.05000000074505806
+      Axes Length: 0.05999999865889549
+      Axes Radius: 0.014999999664723873
       Class: rviz_default_plugins/Pose
       Color: 255; 25; 0
-      Enabled: false
+      Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: Left_arm _pose_target
@@ -545,13 +545,13 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /cirtesub/controller/task_priority/tasks/left_pose/target
-      Value: false
+      Value: true
     - Alpha: 1
-      Axes Length: 0.5
-      Axes Radius: 0.05000000074505806
+      Axes Length: 0.05999999865889549
+      Axes Radius: 0.014999999664723873
       Class: rviz_default_plugins/Pose
       Color: 255; 25; 0
-      Enabled: false
+      Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: Right_arm _pose_target
@@ -565,7 +565,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /cirtesub/controller/task_priority/tasks/right_pose/target
-      Value: false
+      Value: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz_default_plugins/Odometry
       Covariance:
@@ -617,6 +617,19 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /cirtesub/aruco/markers
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Stabilize limits
+      Namespaces:
+        stabilize_limits/limits/pitch: true
+        stabilize_limits/limits/roll: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /cirtesub/alpha/controller/task_priority_controller/stabilize_limits/limits_markers
       Value: true
     - Alpha: 1
       Axes Length: 1
@@ -680,6 +693,48 @@ Visualization Manager:
       Show Descriptions: true
       Show Visual Aids: true
       Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Joint_limits
+      Namespaces:
+        joint_limits/limits/cirtesub/alpha_left/axis_c: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /cirtesub/alpha/controller/task_priority_controller/joint_limits/limits_markers
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Self_colisions
+      Namespaces:
+        self_collision_avoidance/alpha_left_distal: true
+        self_collision_avoidance/alpha_left_proximal: true
+        self_collision_avoidance/alpha_right_distal: true
+        self_collision_avoidance/alpha_right_proximal: true
+        self_collision_avoidance/planes/body_guard: true
+        self_collision_avoidance/planes/z_guard: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /cirtesub/alpha/controller/task_priority_controller/self_collision_avoidance/capsules
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Planing
+      Namespaces:
+        aruco_map: true
+        cirtesu_mesh: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /cirtesub/aruco/markers
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -726,25 +781,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 4.933157444000244
+      Distance: 2.361492872238159
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -1.4551156759262085
-        Y: -2.873685121536255
-        Z: 3.4912397861480713
+        X: 0.7043915390968323
+        Y: -0.22300568222999573
+        Z: 1.571468472480774
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: true
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.18979796767234802
+      Pitch: 0.2647981345653534
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.444404602050781
+      Yaw: 0.7362197637557983
     Saved: ~
 Window Geometry:
   Displays:
@@ -756,7 +811,7 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd000000040000000000000199000002b0fc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000002b0000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670000000165000001880000017d00ffffff000000010000010f000002b0fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d000002b0000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000005520000003efc0100000002fb0000000800540069006d0065010000000000000552000002fb00fffffffb0000000800540069006d00650100000000000004500000000000000000000003b3000002b000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001b6000002b0fc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000002b0000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670000000165000001880000017d00ffffff000000010000010f000002b0fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d000002b0000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000005520000003efc0100000002fb0000000800540069006d0065010000000000000552000002fb00fffffffb0000000800540069006d0065010000000000000450000000000000000000000396000002b000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:

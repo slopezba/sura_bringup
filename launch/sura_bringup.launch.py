@@ -401,6 +401,7 @@ def generate_launch_description():
                 ),
                 launch_arguments=[
                     ("robot_namespace", robot_namespace),
+                    ("arms", LaunchConfiguration("arms")),
                     (
                         "diagnostics_params_package",
                         LaunchConfiguration("diagnostics_params_package"),
